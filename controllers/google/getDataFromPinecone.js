@@ -34,7 +34,7 @@ const validation = (req, res, next) => {
 }
 const getDataFromPinecone = async (req, res) => {
   try {
-    const result = await GoogleService.getDataFromPinecone(req.body)
+    const result = await GoogleService.getDataFromPinecone(req.body.myData, req.body.flag)
     res.sendJson({ type: __constants.RESPONSE_MESSAGES.SUCCESS, data: result })
   } catch (err) {
     console.log('getDataFromPinecone Error', err)
