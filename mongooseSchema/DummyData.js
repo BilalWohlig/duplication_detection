@@ -4,6 +4,20 @@ const Schema = mongoose.Schema
 const schema = new Schema({
     userData: {
         type: Object
+    },
+    similarityScore: {
+        type: Number
+    },
+    mostSimilarDocument: {
+        type: Schema.Types.ObjectId,
+        ref: "DummyData"
+    },
+    pineconeId: {
+        type: String
+    },
+    status: {
+        type: String,
+        enum: ['duplicate', 'non-duplicate', 'merged']
     }
 },
 { timestamps: true })
