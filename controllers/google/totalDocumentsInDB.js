@@ -32,12 +32,12 @@ const validationSchema = {
 const validation = (req, res, next) => {
   return validationOfAPI(req, res, next, validationSchema, 'body')
 }
-const updateAllDocuemntsInDB = async (req, res) => {
+const totalDocumentsInDB = async (req, res) => {
   try {
-    const result = await GoogleService.updateAllDocuemntsInDB()
+    const result = await GoogleService.totalDocumentsInDB()
     res.sendJson({ type: __constants.RESPONSE_MESSAGES.SUCCESS, data: result })
   } catch (err) {
-    console.log('updateAllDocuemntsInDB Error', err)
+    console.log('totalDocumentsInDB Error', err)
     return res.sendJson({
       type: err.type || __constants.RESPONSE_MESSAGES.SERVER_ERROR,
       err: err.err || err
@@ -45,5 +45,5 @@ const updateAllDocuemntsInDB = async (req, res) => {
   }
 }
 
-router.get('/updateAllDocuemntsInDB', validation, updateAllDocuemntsInDB)
+router.post('/totalDocumentsInDB', validation, totalDocumentsInDB)
 module.exports = router

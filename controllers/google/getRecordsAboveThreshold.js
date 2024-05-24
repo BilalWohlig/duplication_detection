@@ -32,12 +32,12 @@ const validationSchema = {
 const validation = (req, res, next) => {
   return validationOfAPI(req, res, next, validationSchema, 'body')
 }
-const generateDummyData = async (req, res) => {
+const getRecordsAboveThreshold = async (req, res) => {
   try {
-    const result = await GoogleService.generateDummyData(req.body.number)
+    const result = await GoogleService.getRecordsAboveThreshold(req.body.threshold, req.body.page)
     res.sendJson({ type: __constants.RESPONSE_MESSAGES.SUCCESS, data: result })
   } catch (err) {
-    console.log('generateDummyData Error', err)
+    console.log('getRecordsAboveThreshold Error', err)
     return res.sendJson({
       type: err.type || __constants.RESPONSE_MESSAGES.SERVER_ERROR,
       err: err.err || err
@@ -45,5 +45,5 @@ const generateDummyData = async (req, res) => {
   }
 }
 
-router.post('/generateDummyData', validation, generateDummyData)
+router.post('/getRecordsAboveThreshold', validation, getRecordsAboveThreshold)
 module.exports = router
