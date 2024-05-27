@@ -132,14 +132,9 @@ class GoogleService {
     return await DummyData.find({similarityScore: {$gte: threshold}}).skip(skip).limit(limit)
   }
 
-  async totalDocumentsInDB(page) {
-    let pageNo = 1
-    if(page) {
-      pageNo = page
-    }
-    const limit = 20
-    const skip = (pageNo - 1) * limit
-    return await DummyData.find().skip(skip).limit(limit)
+  async totalDocumentsInDB() {
+    const docs = await DummyData.find()
+    return docs.length
   }
 
   async totalDuplicateDocumentsInDB(page) {
