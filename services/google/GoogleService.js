@@ -437,7 +437,9 @@ class GoogleService {
   }
 
   async updateAllDocuemntsInDB() {
-    const records = await DummyData.find({pineconeId: {$exists: true}})
+    let docs = 0
+    const records = await DummyData.find()
+    console.log(records.length)
     for (let i = 0; i < records.length; i++) {
       const record = records[i];
       const document = await index.query({
@@ -458,12 +460,21 @@ class GoogleService {
       })
       const matchingDocInDB = await DummyData.findOne({"userData.FAMILYIDNO": matchingDocInPinecone.matches[1].metadata.FAMILYIDNO, "userData.FATHER_NAME_ENG": matchingDocInPinecone.matches[1].metadata.FATHER_NAME_ENG, "userData.HOF_NAME_ENG": matchingDocInPinecone.matches[1].metadata.HOF_NAME_ENG})
 
-      record.pineconeId = document.matches[0].id
-      record.mostSimilarDocument = matchingDocInDB._id,
-      record.similarityScore = Math.round(matchingDocInPinecone.matches[1].score * 100)
-      await record.save()
-      console.log("Record Updated", i + 1)
+      if(matchingDocInDB) {
+        record.pineconeId = document.matches[0].id
+        record.mostSimilarDocument = matchingDocInDB._id,
+        record.similarityScore = Math.round(matchingDocInPinecone.matches[1].score * 100)
+        await record.save()
+        console.log("Record Updated", i + 1)
+        docs++
+      }
+      // return {
+      //   dbDoc: matchingDocInDB,
+      //   pineconeDoc: matchingDocInPinecone,
+      //   record: record
+      // }
     }
+    console.log("Updated Records:", docs)
   }
 
   async getRecordsAboveThreshold(threshold, page) {
