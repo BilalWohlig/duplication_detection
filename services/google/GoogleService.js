@@ -372,10 +372,6 @@ class GoogleService {
     }
   }
 
-  async getRecordsAboveThreshold(threshold) {
-    const records = await DummyData.find()
-  }
-
   async updateAllDocuemntsInDB() {
     const records = await DummyData.find({pineconeId: {$exists: true}})
     for (let i = 0; i < records.length; i++) {
@@ -406,22 +402,44 @@ class GoogleService {
     }
   }
 
-  async totalDocumentsInDB() {
-    return await DummyData.find()
+  async getRecordsAboveThreshold(threshold, page) {
+    let pageNo = 1
+    if(page) {
+      pageNo = page
+    }
+    const limit = 20
+    const skip = (pageNo - 1) * limit
+    return await DummyData.find({similarityScore: {$gte: threshold}}).skip(skip).limit(limit)
   }
 
-  async totalDuplicateDocumentsInDB() {
-    return await DummyData.find({status: 'duplicate'})
+  async totalDocumentsInDB(page) {
+    let pageNo = 1
+    if(page) {
+      pageNo = page
+    }
+    const limit = 20
+    const skip = (pageNo - 1) * limit
+    return await DummyData.find().skip(skip).limit(limit)
+  }
+
+  async totalDuplicateDocumentsInDB(page) {
+    let pageNo = 1
+    if(page) {
+      pageNo = page
+    }
+    const limit = 20
+    const skip = (pageNo - 1) * limit
+    return await DummyData.find({status: 'duplicate'}).skip(skip).limit(limit)
   }
 
   async changeStatus(status, docId) {
-    await DummyData.findByIdAndUpdate(docId, {
+    return await DummyData.findByIdAndUpdate(docId, {
       status: status
-    })
+    }, {new: true})
   }
 
   async getOneRecord(recordId) {
-    const record = await DummyData.findById(recordId).populate("mostSimilarDocument")
+    const record = await DummyData.findOne({_id: recordId, status: 'duplicate'}).populate("mostSimilarDocument")
     return {
       document: record.userData,
       duplicate: record.mostSimilarDocument.userData
