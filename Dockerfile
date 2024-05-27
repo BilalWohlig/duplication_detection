@@ -1,4 +1,4 @@
-FROM node:alpine
+FROM node:20.11-alpine
 
 ADD "package.json" /app/
 
