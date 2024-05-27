@@ -4,7 +4,6 @@ const __constants = require('../../config/constants')
 const validationOfAPI = require('../../middlewares/validation')
 // const cache = require('../../../middlewares/requestCacheMiddleware')
 const GoogleService = require('../../services/google/GoogleService')
-const DummyData = require("../../mongooseSchema/DummyData")
 
 /**
  * @namespace -GNEWS-MODULE-
@@ -33,14 +32,12 @@ const validationSchema = {
 const validation = (req, res, next) => {
   return validationOfAPI(req, res, next, validationSchema, 'body')
 }
-const pushDataToPinecone = async (req, res) => {
+const getRecordsAboveThreshold = async (req, res) => {
   try {
-    const allUsers = await DummyData.find()
-    const pineconeArray = allUsers.map((user) => user.userData)
-    const result = await GoogleService.pushDataToPinecone(pineconeArray, req.body.flag)
+    const result = await GoogleService.getRecordsAboveThreshold(req.body.threshold, req.body.page)
     res.sendJson({ type: __constants.RESPONSE_MESSAGES.SUCCESS, data: result })
   } catch (err) {
-    console.log('pushDataToPinecone Error', err)
+    console.log('getRecordsAboveThreshold Error', err)
     return res.sendJson({
       type: err.type || __constants.RESPONSE_MESSAGES.SERVER_ERROR,
       err: err.err || err
@@ -48,5 +45,5 @@ const pushDataToPinecone = async (req, res) => {
   }
 }
 
-router.post('/pushDataToPinecone', validation, pushDataToPinecone)
+router.post('/getRecordsAboveThreshold', validation, getRecordsAboveThreshold)
 module.exports = router
