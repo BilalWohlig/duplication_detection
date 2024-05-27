@@ -31,7 +31,6 @@
     ]
   },
   "devDependencies": {
-    "@faker-js/faker": "^8.4.1",
     "jsdoc": "^3.6.6",
     "jsdoc-http-plugin": "^0.3.2",
     "nodemon": "^2.0.2",
@@ -65,6 +64,7 @@
     "passport-jwt": "^4.0.1",
     "randomatic": "^3.1.1",
     "redis": "^3.0.2",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "@faker-js/faker": "^8.4.1"
   }
 }
