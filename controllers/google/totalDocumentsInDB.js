@@ -45,5 +45,5 @@ const totalDocumentsInDB = async (req, res) => {
   }
 }
 
-router.post('/totalDocumentsInDB', validation, totalDocumentsInDB)
+router.get('/totalDocumentsInDB', validation, totalDocumentsInDB)
 module.exports = router
