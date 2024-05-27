@@ -7,13 +7,16 @@ const pinecone = new Pinecone({
 const pinecone_google = new Pinecone({
   apiKey: process.env.PINECONE_V2_GOOGLE_API_KEY,
 });
+const pinecone_v3 = new Pinecone({
+  apiKey: process.env.PINECONE_V3_GOOGLE_API_KEY
+})
 const OpenAI = require("openai");
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 const { v4: uuidv4 } = require("uuid");
-const index = pinecone.index("google-data");
+const index = pinecone_v3.index("google-data");
 const aiplatform = require("@google-cloud/aiplatform");
 const { PredictionServiceClient } = aiplatform.v1;
 const { helpers } = aiplatform; // helps construct protobuf.Value objects.
@@ -33,6 +36,7 @@ if (process.env.GOOGLE_TRANSLATE_CREDENTIALS) {
 class GoogleService {
   async pushDataToPinecone(data, flag) {
     if (flag) {
+      console.log(data.length)
       const batch_size = 100;
       for (let i = 0; i < data.length; i += batch_size) {
         const i_end = Math.min(data.length, i + batch_size);
@@ -41,7 +45,37 @@ class GoogleService {
           return uuidv4();
         });
         const texts_batch = meta_batch.map((x) => {
-          let stringData = Object.values(x);
+          let finalObj = {
+            "FAMILYIDNO": x.FAMILYIDNO,
+            "ENROLLMENT_ID": x.ENROLLMENT_ID,
+            "MEMBER_ID": x.MEMBER_ID,
+            "AADHAR_REF_ID": x.AADHAR_REF_ID,
+            "HOF_NAME_ENG": x.HOF_NAME_ENG,
+            "FATHER_NAME_ENG": x.FATHER_NAME_ENG,
+            "DOB": x.DOB,
+            "MOTHER_NAME_ENG": x.MOTHER_NAME_ENG,
+            "SPOUSE_NAME_ENG": x.SPOUSE_NAME_ENG,
+            "MOBILE_NO": x.MOBILE_NO,
+            "EMAIL": x.EMAIL,
+            "HOF_ACCOUNT_NO": x.HOF_ACCOUNT_NO,
+            "ADDRESS_CO_ENG": x.ADDRESS_CO_ENG,
+            "MNAREGA_NO": x.MNAREGA_NO,
+            "ELECTRICITY_CON_ID": x.ELECTRICITY_CON_ID,
+            "WATER_BILL_NO": x.WATER_BILL_NO,
+            "GAS_CON_NO": x.GAS_CON_NO,
+            "RATION_CARD_NO": x.RATION_CARD_NO,
+            "RATION_MEM_UID": x.RATION_MEM_UID,
+            "BPL_CARD_NO": x.BPL_CARD_NO,
+            "EMPLOYEMENT_REG_NO": x.EMPLOYEMENT_REG_NO,
+            "GOVT_EMP_ID": x.GOVT_EMP_ID,
+            "SSP_PPO_NO": x.SSP_PPO_NO,
+            "LABOUR_CARD_NO": x.LABOUR_CARD_NO,
+            "VOTER_ID_NO": x.VOTER_ID_NO,
+            "DRIVING_LIC_NO": x.DRIVING_LIC_NO,
+            "PASSPORT_ID": x.PASSPORT_ID,
+            "PAN_CARD_NO": x.PAN_CARD_NO,
+          }
+          let stringData = Object.values(finalObj);
           stringData = stringData.join(", ");
           return stringData;
         });
@@ -140,7 +174,37 @@ class GoogleService {
   }
 
   async getDataFromPinecone(data, flag) {
-    let stringData = Object.values(data);
+    let finalObj = {
+      "FAMILYIDNO": data.FAMILYIDNO,
+      "ENROLLMENT_ID": data.ENROLLMENT_ID,
+      "MEMBER_ID": data.MEMBER_ID,
+      "AADHAR_REF_ID": data.AADHAR_REF_ID,
+      "HOF_NAME_ENG": data.HOF_NAME_ENG,
+      "FATHER_NAME_ENG": data.FATHER_NAME_ENG,
+      "DOB": data.DOB,
+      "MOTHER_NAME_ENG": data.MOTHER_NAME_ENG,
+      "SPOUSE_NAME_ENG": data.SPOUSE_NAME_ENG,
+      "MOBILE_NO": data.MOBILE_NO,
+      "EMAIL": data.EMAIL,
+      "HOF_ACCOUNT_NO": data.HOF_ACCOUNT_NO,
+      "ADDRESS_CO_ENG": data.ADDRESS_CO_ENG,
+      "MNAREGA_NO": data.MNAREGA_NO,
+      "ELECTRICITY_CON_ID": data.ELECTRICITY_CON_ID,
+      "WATER_BILL_NO": data.WATER_BILL_NO,
+      "GAS_CON_NO": data.GAS_CON_NO,
+      "RATION_CARD_NO": data.RATION_CARD_NO,
+      "RATION_MEM_UID": data.RATION_MEM_UID,
+      "BPL_CARD_NO": data.BPL_CARD_NO,
+      "EMPLOYEMENT_REG_NO": data.EMPLOYEMENT_REG_NO,
+      "GOVT_EMP_ID": data.GOVT_EMP_ID,
+      "SSP_PPO_NO": data.SSP_PPO_NO,
+      "LABOUR_CARD_NO": data.LABOUR_CARD_NO,
+      "VOTER_ID_NO": data.VOTER_ID_NO,
+      "DRIVING_LIC_NO": data.DRIVING_LIC_NO,
+      "PASSPORT_ID": data.PASSPORT_ID,
+      "PAN_CARD_NO": data.PAN_CARD_NO,
+    }
+    let stringData = Object.values(finalObj);
     stringData = stringData.join(", ");
     if (flag) {
       const embeddings = await openai.embeddings.create({
@@ -150,7 +214,7 @@ class GoogleService {
       var embeds = embeddings.data.map((record) => record.embedding);
       const finalResponse = index.query({
         vector: embeds[0],
-        topK: 1,
+        topK: 2,
         includeValues: false,
         includeMetadata: true,
       });
@@ -188,7 +252,7 @@ class GoogleService {
       }
       const finalResponse = index.query({
         vector: embeds[0],
-        topK: 1,
+        topK: 2,
         includeValues: false,
         includeMetadata: true,
       });
