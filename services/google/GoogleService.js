@@ -144,7 +144,12 @@ class GoogleService {
     }
     const limit = 20
     const skip = (pageNo - 1) * limit
-    return await DummyData.find({status: 'duplicate'}).skip(skip).limit(limit)
+    const docs = await DummyData.find({status: 'duplicate'}).skip(skip).limit(limit)
+    const totalDocs = await DummyData.find({status: 'duplicate'})
+    return {
+      documents: docs,
+      totalCount: totalDocs.length
+    }
   }
 
   async changeStatus(status, docId) {
