@@ -163,11 +163,16 @@ class GoogleService {
     const keys = Object.keys(record.userData)
     let objArray = []
     for(const key of keys) {
-      objArray.push({
+      const obj = {
         columnKey: key,
         document: record.userData[key],
-        duplicate: record.mostSimilarDocument.userData[key]
-      })
+        duplicate: record.mostSimilarDocument.userData[key],
+        isSame: false
+      }
+      if(obj.document == obj.duplicate) {
+        obj.isSame = true
+      }
+      objArray.push(obj)
     }
     return {
       comparison: objArray,
