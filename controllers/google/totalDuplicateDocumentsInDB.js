@@ -34,7 +34,7 @@ const validation = (req, res, next) => {
 }
 const totalDuplicateDocumentsInDB = async (req, res) => {
   try {
-    const result = await GoogleService.totalDuplicateDocumentsInDB()
+    const result = await GoogleService.totalDuplicateDocumentsInDB(req.body.page)
     res.sendJson({ type: __constants.RESPONSE_MESSAGES.SUCCESS, data: result })
   } catch (err) {
     console.log('totalDuplicateDocumentsInDB Error', err)
