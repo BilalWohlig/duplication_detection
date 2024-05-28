@@ -160,9 +160,17 @@ class GoogleService {
 
   async getOneRecord(recordId) {
     const record = await DummyData.findOne({_id: recordId, status: 'duplicate'}).populate("mostSimilarDocument")
+    const keys = Object.keys(record.userData)
+    let obj = {}
+    for(const key of keys) {
+      obj[key] = {
+        document: record.userData[key],
+        duplicate: record.mostSimilarDocument.userData[key]
+      }
+    }
     return {
-      document: record.userData,
-      duplicate: record.mostSimilarDocument.userData
+      comparison: obj,
+      similarityScore: record.similarityScore
     }
   }
 }
