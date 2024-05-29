@@ -313,7 +313,7 @@ class GoogleService {
     }
     await DummyData.insertMany(userArray)
     console.log("MongoDB Doneeeeee", userArray.length)
-    const pineconeArray = userArray.map((user) => user.userData)
+    // const pineconeArray = userArray.map((user) => user.userData)
     // await this.pushDataToPinecone(pineconeArray, true)
     // console.log("Pineconeeee Doneeeeee", pineconeArray.length)
     return userArray
@@ -438,7 +438,7 @@ class GoogleService {
 
   async updateAllDocuemntsInDB() {
     let docs = 0
-    const records = await DummyData.find()
+    const records = await DummyData.find().sort({_id:-1}).limit(15)
     console.log(records.length)
     for (let i = 0; i < records.length; i++) {
       const record = records[i];
