@@ -129,7 +129,7 @@ class GoogleService {
     }
     const limit = 20
     const skip = (pageNo - 1) * limit
-    const docs = await DummyData.find({similarityScore: {$gte: threshold}}).skip(skip).limit(limit)
+    const docs = await DummyData.find({similarityScore: {$gte: threshold}, status: 'duplicate'}).skip(skip).limit(limit)
     const totalDocs = await DummyData.find({similarityScore: {$gte: threshold}})
     for(const doc of docs) {
       doc.userData.similarityScore = doc.similarityScore
@@ -168,23 +168,29 @@ class GoogleService {
 
   async getOneRecord(recordId) {
     const record = await DummyData.findOne({_id: recordId, status: 'duplicate'}).populate("mostSimilarDocument")
-    const keys = Object.keys(record.userData)
-    let objArray = []
-    for(const key of keys) {
-      const obj = {
-        columnKey: key,
-        document: record.userData[key],
-        duplicate: record.mostSimilarDocument.userData[key],
-        isSame: false
+    if(record) {
+      const keys = Object.keys(record.userData)
+      let objArray = []
+      for(const key of keys) {
+        const obj = {
+          columnKey: key,
+          document: record.userData[key],
+          duplicate: record.mostSimilarDocument.userData[key],
+          isSame: false
+        }
+        if(obj.document == obj.duplicate) {
+          obj.isSame = true
+        }
+        objArray.push(obj)
       }
-      if(obj.document == obj.duplicate) {
-        obj.isSame = true
+      return {
+        comparison: objArray,
+        similarityScore: record.similarityScore
       }
-      objArray.push(obj)
     }
     return {
-      comparison: objArray,
-      similarityScore: record.similarityScore
+      comparison: [],
+      similarityScore: 0
     }
   }
 }
