@@ -33,14 +33,12 @@ const validationSchema = {
 const validation = (req, res, next) => {
   return validationOfAPI(req, res, next, validationSchema, 'body')
 }
-const pushDataToPinecone = async (req, res) => {
+const pushSingleDataToDb = async (req, res) => {
   try {
-    let data = await DummyData.find().sort({_id:-1}).limit(5)
-    data = data.map((d) => d.userData)
-    const result = await GoogleService.pushDataToPinecone(data, req.body.flag)
+    const result = await GoogleService.pushSingleDataToDb(req.body.data)
     res.sendJson({ type: __constants.RESPONSE_MESSAGES.SUCCESS, data: result })
   } catch (err) {
-    console.log('pushDataToPinecone Error', err)
+    console.log('pushSingleDataToDb Error', err)
     return res.sendJson({
       type: err.type || __constants.RESPONSE_MESSAGES.SERVER_ERROR,
       err: err.err || err
@@ -48,5 +46,5 @@ const pushDataToPinecone = async (req, res) => {
   }
 }
 
-router.post('/pushDataToPinecone', validation, pushDataToPinecone)
+router.post('/pushSingleDataToDb', validation, pushSingleDataToDb)
 module.exports = router
