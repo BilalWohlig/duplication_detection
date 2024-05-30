@@ -17,7 +17,7 @@ const schema = new Schema({
     },
     status: {
         type: String,
-        enum: ['duplicate', 'non-duplicate', 'merged']
+        enum: ['duplicate', 'non-duplicate']
     }
 },
 { timestamps: true })
