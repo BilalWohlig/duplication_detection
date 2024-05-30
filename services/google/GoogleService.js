@@ -10,13 +10,16 @@ const pinecone_google = new Pinecone({
 const pinecone_v3 = new Pinecone({
   apiKey: process.env.PINECONE_V3_GOOGLE_API_KEY
 })
+const pinecone_v4 = new Pinecone({
+  apiKey: process.env.PINECONE_V4_GOOGLE_API_KEY
+})
 const OpenAI = require("openai");
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 const { v4: uuidv4 } = require("uuid");
-const index = pinecone_v3.index("google-data");
+const index = pinecone_v4.index("google-data");
 const aiplatform = require("@google-cloud/aiplatform");
 const { PredictionServiceClient } = aiplatform.v1;
 const { helpers } = aiplatform; // helps construct protobuf.Value objects.
@@ -101,6 +104,271 @@ class GoogleService {
         const to_upsert = ids_batch.map((id, i) => ({
           id: id,
           values: embeds[i],
+          metadata: meta_batch_cleaned[i],
+        }));
+        await index.upsert(to_upsert);
+        console.log("Successfully uploaded", i/100);
+      }
+    } else {
+      const index = pinecone_google.index("google-data");
+      const project = process.env.PROJECT_ID;
+      const apiEndpoint = "us-central1-aiplatform.googleapis.com";
+      const outputDimensionality = 0;
+      const model = "text-embedding-004";
+      const task = "SEMANTIC_SIMILARITY";
+      const clientOptions = { apiEndpoint: apiEndpoint };
+      const location = process.env.EMBEDDING_LOCATION;
+      const endpoint = `projects/${project}/locations/${location}/publishers/google/models/${model}`;
+      const parameters =
+        outputDimensionality > 0
+          ? helpers.toValue(outputDimensionality)
+          : helpers.toValue(3072);
+      const batch_size = 50;
+      for (let i = 0; i < data.length; i += batch_size) {
+        const i_end = Math.min(data.length, i + batch_size);
+        const meta_batch = data.slice(i, i_end);
+        const ids_batch = meta_batch.map((x) => {
+          return uuidv4();
+        });
+        const texts_batch = meta_batch.map((x) => {
+          let stringData = Object.values(x);
+          stringData = stringData.join(", ");
+          return stringData;
+        });
+        let embeds = [];
+        try {
+          const instances = texts_batch.map((e) =>
+            helpers.toValue({ content: e, taskType: task })
+          );
+          const request = { endpoint, instances, parameters };
+          const client = new PredictionServiceClient(clientOptions);
+          const [response] = await client.predict(request);
+          // console.log("Got predict response");
+          const predictions = response.predictions;
+          // console.log(predictions);
+          for (const prediction of predictions) {
+            const embeddings = prediction.structValue.fields.embeddings;
+            const values =
+              embeddings.structValue.fields.values.listValue.values;
+            const embeddingValues = values.map((value) => value.numberValue);
+            embeds.push(embeddingValues);
+          }
+        } catch (error) {
+          console.log("Error while creating embedding", error);
+        }
+        const meta_batch_cleaned = meta_batch.map((x) => ({
+          FAMILYIDNO: x.FAMILYIDNO,
+          AADHAR_REF_IDL: x.AADHAR_REF_ID,
+          HOF_NAME_ENG: x.HOF_NAME_ENG,
+          FATHER_NAME_ENG: x.FATHER_NAME_ENG,
+          MOTHER_NAME_ENG: x.MOTHER_NAME_ENG,
+          DOB: x.DOB,
+          ALL_DATA: Object.values(x).join(", "),
+        }));
+        const to_upsert = ids_batch.map((id, i) => ({
+          id: id,
+          values: embeds[i],
+          metadata: meta_batch_cleaned[i],
+        }));
+        await index.upsert(to_upsert);
+        console.log("Successfully uploaded", i/50);
+      }
+    }
+  }
+
+  async pushDataToPineconeV2(data, flag) {
+    if (flag) {
+      // console.log("Heyyy", data.length)
+      const batch_size = 100;
+      for (let i = 0; i < data.length; i += batch_size) {
+        const i_end = Math.min(data.length, i + batch_size);
+        const meta_batch = data.slice(i, i_end);
+        const ids_batch = meta_batch.map((x) => {
+          return uuidv4();
+        });
+        // const texts_batch = meta_batch.map((x) => {
+        //   let finalObj = {
+        //     "FAMILYIDNO": x.FAMILYIDNO,
+        //     "ENROLLMENT_ID": x.ENROLLMENT_ID,
+        //     "MEMBER_ID": x.MEMBER_ID,
+        //     "AADHAR_REF_ID": x.AADHAR_REF_ID,
+        //     "HOF_NAME_ENG": x.HOF_NAME_ENG,
+        //     "FATHER_NAME_ENG": x.FATHER_NAME_ENG,
+        //     "DOB": x.DOB,
+        //     "MOTHER_NAME_ENG": x.MOTHER_NAME_ENG,
+        //     "SPOUSE_NAME_ENG": x.SPOUSE_NAME_ENG,
+        //     "MOBILE_NO": x.MOBILE_NO,
+        //     "EMAIL": x.EMAIL,
+        //     "HOF_ACCOUNT_NO": x.HOF_ACCOUNT_NO,
+        //     "ADDRESS_CO_ENG": x.ADDRESS_CO_ENG,
+        //     "MNAREGA_NO": x.MNAREGA_NO,
+        //     "ELECTRICITY_CON_ID": x.ELECTRICITY_CON_ID,
+        //     "WATER_BILL_NO": x.WATER_BILL_NO,
+        //     "GAS_CON_NO": x.GAS_CON_NO,
+        //     "RATION_CARD_NO": x.RATION_CARD_NO,
+        //     "RATION_MEM_UID": x.RATION_MEM_UID,
+        //     "BPL_CARD_NO": x.BPL_CARD_NO,
+        //     "EMPLOYEMENT_REG_NO": x.EMPLOYEMENT_REG_NO,
+        //     "GOVT_EMP_ID": x.GOVT_EMP_ID,
+        //     "SSP_PPO_NO": x.SSP_PPO_NO,
+        //     "LABOUR_CARD_NO": x.LABOUR_CARD_NO,
+        //     "VOTER_ID_NO": x.VOTER_ID_NO,
+        //     "DRIVING_LIC_NO": x.DRIVING_LIC_NO,
+        //     "PASSPORT_ID": x.PASSPORT_ID,
+        //     "PAN_CARD_NO": x.PAN_CARD_NO,
+        //   }
+        //   let stringData = Object.values(finalObj);
+        //   stringData = stringData.join(", ");
+        //   return stringData;
+        // });
+        const id_batch = meta_batch.map((x) => {
+          let finalObj = {
+            "FAMILYIDNO": x.FAMILYIDNO,
+            "ENROLLMENT_ID": x.ENROLLMENT_ID,
+            "MEMBER_ID": x.MEMBER_ID,
+            "AADHAR_REF_ID": x.AADHAR_REF_ID,
+            "MOBILE_NO": x.MOBILE_NO,
+            "HOF_ACCOUNT_NO": x.HOF_ACCOUNT_NO,
+            "MNAREGA_NO": x.MNAREGA_NO,
+            "ELECTRICITY_CON_ID": x.ELECTRICITY_CON_ID,
+            "WATER_BILL_NO": x.WATER_BILL_NO,
+            "GAS_CON_NO": x.GAS_CON_NO,
+            "RATION_CARD_NO": x.RATION_CARD_NO,
+            "RATION_MEM_UID": x.RATION_MEM_UID,
+            "BPL_CARD_NO": x.BPL_CARD_NO,
+            "EMPLOYEMENT_REG_NO": x.EMPLOYEMENT_REG_NO,
+            "GOVT_EMP_ID": x.GOVT_EMP_ID,
+            "SSP_PPO_NO": x.SSP_PPO_NO,
+            "LABOUR_CARD_NO": x.LABOUR_CARD_NO,
+            "VOTER_ID_NO": x.VOTER_ID_NO,
+            "DRIVING_LIC_NO": x.DRIVING_LIC_NO,
+            "PASSPORT_ID": x.PASSPORT_ID,
+            "PAN_CARD_NO": x.PAN_CARD_NO,
+          }
+          let stringData = Object.values(finalObj);
+          stringData = stringData.join(", ");
+          return stringData;
+        })
+        const name_batch = meta_batch.map((x) => {
+          let finalObj = {
+            "HOF_NAME_ENG": x.HOF_NAME_ENG,
+            "HOF_NAME_HND": x.HOF_NAME_HND,
+            "FATHER_NAME_ENG": x.FATHER_NAME_ENG,
+            "FATHER_NAME_HND": x.FATHER_NAME_HND,
+            "DOB": x.DOB,
+            "MOTHER_NAME_ENG": x.MOTHER_NAME_ENG,
+            "MOTHER_NAME_HND": x.MOTHER_NAME_HND,
+            "SPOUSE_NAME_ENG": x.SPOUSE_NAME_ENG,
+            "SPOUSE_NAME_HND": x.SPOUSE_NAME_HND,
+            "EMAIL": x.EMAIL,
+            "ADDRESS_CO_ENG": x.ADDRESS_CO_ENG,
+            "ADDRESS_CO_HND": x.ADDRESS_CO_HND,
+          }
+          let stringData = Object.values(finalObj);
+          stringData = stringData.join(", ");
+          return stringData;
+        })
+        const rest_batch = meta_batch.map((x) => {
+          let finalObj = {
+            "GENDER": x.GENDER,
+            "MARITAL_STATUS": x.MARITAL_STATUS,
+            "DISABILITY_CAT": x.DISABILITY_CAT,
+            "HOUSE_CATEGORY": x.HOUSE_CATEGORY,
+            "CATEGORY": x.CATEGORY,
+            "CASTE_HND": x.CASTE_HND,
+            "IS_MINORITY": x.IS_MINORITY,
+            "RELIGION": x.RELIGION,
+            "EDUCATION": x.EDUCATION,
+            "RESIDENTIAL_CODE": x.RESIDENTIAL_CODE,
+            "LIVING_SINCE_YEAR": x.LIVING_SINCE_YEAR,
+            "RELATION_TYPE": x.RELATION_TYPE,
+            "TOTAL_FAMILY_MEMBER": x.TOTAL_FAMILY_MEMBER,
+            "HOF_BRANCH_NAME": x.HOF_BRANCH_NAME,
+            "STATE": x.STATE,
+            "DISTRICT": x.DISTRICT,
+            "IS_RURAL": x.IS_RURAL,
+            "CITY_BLOCK": x.CITY_BLOCK,
+            "GRAM_PANCHAYAT": x.GRAM_PANCHAYAT,
+            "WARD_HND": x.WARD_HND,
+            "VILLAGE_ENG": x.VILLAGE_ENG,
+            "PIN_CODE": x.PIN_CODE,
+            "GAS_AGENCY": x.GAS_AGENCY,
+            "RATION_CARD_TYPE": x.RATION_CARD_TYPE,
+            "HOUSE_TYPE": x.HOUSE_TYPE,
+            "HOUSE_STATUS": x.HOUSE_STATUS,
+            "YEARLY_EXACT_INCOME": x.YEARLY_EXACT_INCOME,
+            "OCCUPATION": x.OCCUPATION,
+            "OCCUPATION_SUB_CAT": x.OCCUPATION_SUB_CAT,
+            "LABOUR_CARD_END_DATE": x.LABOUR_CARD_END_DATE,
+            "IS_ORPHAN": x.IS_ORPHAN,
+            "NFSA": x.NFSA
+          }
+          let stringData = Object.values(finalObj);
+          stringData = stringData.join(", ");
+          return stringData;
+        })
+        // let response;
+        let idResponse, nameResponse, restResponse
+        try {
+          // response = await openai.embeddings.create({
+          //   model: "text-embedding-3-large",
+          //   input: texts_batch,
+          // });
+          idResponse = await openai.embeddings.create({
+            model: "text-embedding-3-large",
+            input: id_batch,
+          });
+          nameResponse = await openai.embeddings.create({
+            model: "text-embedding-3-large",
+            input: name_batch,
+          });
+          restResponse = await openai.embeddings.create({
+            model: "text-embedding-3-large",
+            input: rest_batch,
+          });
+
+        } catch (error) {
+          console.log("Error while creating embedding", error);
+        }
+        // const embeds = response.data.map((record) => record.embedding);
+        const id_embeds = idResponse.data.map((record) => record.embedding);
+        const name_embeds = nameResponse.data.map((record) => record.embedding);
+        const rest_embeds = restResponse.data.map((record) => record.embedding);
+        // return {
+        //   id: id_embeds[0],
+        //   name: name_embeds[0],
+        //   rest: rest_embeds[0],
+        // }
+
+        let finalEmbeddings = []
+        // for (let i = 0; i < id_embeds.length; i++) {
+        //   const embeddingEntry = ((2 * id_embeds[i]) + (1.25 * name_embeds[i]) + rest_embeds[i]) / 3
+        //   finalEmbeddings.push(embeddingEntry)
+        // }
+        for (let a = 0; a < id_embeds.length; a++) {
+          let tempEmbedding = []
+          for (let b = 0; b < id_embeds[0].length; b++) {
+            const embeddingEntry = ((2 * id_embeds[a][b]) + (1.25 * name_embeds[a][b]) + rest_embeds[a][b])
+            tempEmbedding.push(embeddingEntry)
+          }
+          finalEmbeddings.push(tempEmbedding)
+        }
+        // return {
+        //   count: finalEmbeddings.length,
+        //   embed: finalEmbeddings[0].length
+        // }
+        const meta_batch_cleaned = meta_batch.map((x) => ({
+          FAMILYIDNO: x.FAMILYIDNO,
+          AADHAR_REF_IDL: x.AADHAR_REF_ID,
+          HOF_NAME_ENG: x.HOF_NAME_ENG,
+          FATHER_NAME_ENG: x.FATHER_NAME_ENG,
+          MOTHER_NAME_ENG: x.MOTHER_NAME_ENG,
+          DOB: x.DOB,
+          ALL_DATA: Object.values(x).join(", "),
+        }));
+        const to_upsert = ids_batch.map((id, i) => ({
+          id: id,
+          values: finalEmbeddings[i],
           metadata: meta_batch_cleaned[i],
         }));
         await index.upsert(to_upsert);
