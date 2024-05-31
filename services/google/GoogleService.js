@@ -234,9 +234,20 @@ class GoogleService {
             }
           }
         }
-      }
+      },
     ])
-    return docs;
+    let finalArray = []
+    docs[0].userData._id = docs[0]._id
+    docs[0].userData.recordTitle = 'Original'
+    finalArray.push(docs[0].userData)
+    for (let i = 0; i < docs[0].duplicates.length; i++) {
+      const duplicate = docs[0].duplicates[i];
+      duplicate.userData._id = duplicate._id
+      duplicate.userData.recordTitle = `Duplicate ${i+1}`
+      duplicate.userData.similarityScore = duplicate.similarityScore
+      finalArray.push(duplicate.userData)
+    }
+    return finalArray;
   }
 }
 
