@@ -1,5 +1,6 @@
 const axios = require("axios");
 const { Pinecone } = require("@pinecone-database/pinecone");
+const mongoose = require('mongoose')
 
 const pinecone = new Pinecone({
   apiKey: process.env.PINECONE_GOOGLE_API_KEY,
@@ -192,6 +193,50 @@ class GoogleService {
       comparison: [],
       similarityScore: 0
     }
+  }
+  
+  async getOneRecordV2(recordId) {
+    const record = await DummyData.findById(recordId);
+    const docs = await DummyData.aggregate([
+      {
+        $match: {
+          _id: mongoose.Types.ObjectId(record.mostSimilarDocument),
+        }
+      },
+      {
+        $lookup: {
+          from: "dummydatas",
+          let: { originalId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                similarityScore: { $gte: 90 }
+              }
+            },
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$mostSimilarDocument", "$$originalId"]
+                }
+              }
+            }
+          ],
+          as: "duplicates"
+        }
+      },
+      {
+        $addFields: {
+          duplicates: {
+            $filter: {
+              input: "$duplicates",
+              as: "doc",
+              cond: { $ne: ["$$doc", null] }
+            }
+          }
+        }
+      }
+    ])
+    return docs;
   }
 }
 
