@@ -239,6 +239,7 @@ class GoogleService {
     let finalArray = []
     docs[0].userData._id = docs[0]._id
     docs[0].userData.recordTitle = 'Original'
+    docs[0].userData.similarityScore = 0
     finalArray.push(docs[0].userData)
     for (let i = 0; i < docs[0].duplicates.length; i++) {
       const duplicate = docs[0].duplicates[i];
