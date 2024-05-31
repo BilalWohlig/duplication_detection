@@ -161,10 +161,14 @@ class GoogleService {
     }
   }
 
-  async changeStatus(status, docId) {
-    return await DummyData.findByIdAndUpdate(docId, {
-      status: status
-    }, {new: true})
+  async changeStatus(status, ids) {
+    for(const id of ids) {
+      await DummyData.findByIdAndUpdate(id, {
+        status: status,
+        userDefinedDuplicate: status == 'duplicate' ? true : false
+      }, {new: true})
+    }
+    return "Doneee"
   }
 
   async getOneRecord(recordId) {

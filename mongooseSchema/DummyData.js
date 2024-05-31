@@ -18,6 +18,12 @@ const schema = new Schema({
     status: {
         type: String,
         enum: ['duplicate', 'non-duplicate']
+    },
+    systemDefinedDuplicate: {
+        type: Boolean
+    },
+    userDefinedDuplicate: {
+        type: Boolean
     }
 },
 { timestamps: true })

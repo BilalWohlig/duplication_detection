@@ -34,7 +34,7 @@ const validation = (req, res, next) => {
 }
 const changeStatus = async (req, res) => {
   try {
-    const result = await GoogleService.changeStatus(req.body.status, req.params.id)
+    const result = await GoogleService.changeStatus(req.body.status, req.body.ids)
     res.sendJson({ type: __constants.RESPONSE_MESSAGES.SUCCESS, data: result })
   } catch (err) {
     console.log('changeStatus Error', err)
@@ -45,5 +45,5 @@ const changeStatus = async (req, res) => {
   }
 }
 
-router.post('/changeStatus/:id', validation, changeStatus)
+router.post('/changeStatus', validation, changeStatus)
 module.exports = router
