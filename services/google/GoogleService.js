@@ -200,137 +200,145 @@ class GoogleService {
   }
   
   async getOneRecordV2(recordId) {
-    const record = await DummyData.findById(recordId);
-    const docs = await DummyData.aggregate([
-      {
-        $match: {
-          _id: mongoose.Types.ObjectId(record.mostSimilarDocument),
-        }
-      },
-      {
-        $lookup: {
-          from: "dummydatas",
-          let: { originalId: "$_id" },
-          pipeline: [
-            {
-              $match: {
-                similarityScore: { $gte: 90 }
-              }
-            },
-            {
-              $match: {
-                $expr: {
-                  $eq: ["$mostSimilarDocument", "$$originalId"]
+    const record = await DummyData.findOne({_id: recordId, status: {$exists: false}});
+    if(record){
+      const docs = await DummyData.aggregate([
+        {
+          $match: {
+            _id: mongoose.Types.ObjectId(record.mostSimilarDocument),
+          }
+        },
+        {
+          $lookup: {
+            from: "dummydatas",
+            let: { originalId: "$_id" },
+            pipeline: [
+              {
+                $match: {
+                  similarityScore: { $gte: 90 },
+                  status: {$exists: false}
+                }
+              },
+              {
+                $match: {
+                  $expr: {
+                    $eq: ["$mostSimilarDocument", "$$originalId"]
+                  }
                 }
               }
-            }
-          ],
-          as: "duplicates"
-        }
-      },
-      {
-        $addFields: {
-          duplicates: {
-            $filter: {
-              input: "$duplicates",
-              as: "doc",
-              cond: { $ne: ["$$doc", null] }
+            ],
+            as: "duplicates"
+          }
+        },
+        {
+          $addFields: {
+            duplicates: {
+              $filter: {
+                input: "$duplicates",
+                as: "doc",
+                cond: { $ne: ["$$doc", null] }
+              }
             }
           }
-        }
-      },
-    ])
-    let finalArray = []
-    docs[0].userData._id = docs[0]._id
-    docs[0].userData.recordTitle = 'Original'
-    docs[0].userData.similarityScore = 0
-    finalArray.push(docs[0].userData)
-    for (let i = 0; i < docs[0].duplicates.length; i++) {
-      const duplicate = docs[0].duplicates[i];
-      duplicate.userData._id = duplicate._id
-      duplicate.userData.recordTitle = `Duplicate ${i+1}`
-      duplicate.userData.similarityScore = duplicate.similarityScore
-      finalArray.push(duplicate.userData)
+        },
+      ])
+      let finalArray = []
+      docs[0].userData._id = docs[0]._id
+      docs[0].userData.recordTitle = 'Original'
+      docs[0].userData.similarityScore = 0
+      finalArray.push(docs[0].userData)
+      for (let i = 0; i < docs[0].duplicates.length; i++) {
+        const duplicate = docs[0].duplicates[i];
+        duplicate.userData._id = duplicate._id
+        duplicate.userData.recordTitle = `Duplicate ${i+1}`
+        duplicate.userData.similarityScore = duplicate.similarityScore
+        finalArray.push(duplicate.userData)
+      }
+      return finalArray
     }
-    return finalArray
+    return []
   }
 
   async getOneRecordV3(recordId) {
-    const record = await DummyData.findById(recordId);
-    const docs = await DummyData.aggregate([
-      {
-        $match: {
-          _id: mongoose.Types.ObjectId(record.mostSimilarDocument),
-        }
-      },
-      {
-        $lookup: {
-          from: "dummydatas",
-          let: { originalId: "$_id" },
-          pipeline: [
-            {
-              $match: {
-                similarityScore: { $gte: 90 }
-              }
-            },
-            {
-              $match: {
-                $expr: {
-                  $eq: ["$mostSimilarDocument", "$$originalId"]
+    const record = await DummyData.findOne({_id: recordId, status: {$exists: false}});
+    if(record) {
+      const docs = await DummyData.aggregate([
+        {
+          $match: {
+            _id: mongoose.Types.ObjectId(record.mostSimilarDocument),
+          }
+        },
+        {
+          $lookup: {
+            from: "dummydatas",
+            let: { originalId: "$_id" },
+            pipeline: [
+              {
+                $match: {
+                  similarityScore: { $gte: 90 },
+                  status: {$exists: false}
+                }
+              },
+              {
+                $match: {
+                  $expr: {
+                    $eq: ["$mostSimilarDocument", "$$originalId"]
+                  }
                 }
               }
+            ],
+            as: "duplicates"
+          }
+        },
+        {
+          $addFields: {
+            duplicates: {
+              $filter: {
+                input: "$duplicates",
+                as: "doc",
+                cond: { $ne: ["$$doc", null] }
+              }
             }
-          ],
-          as: "duplicates"
-        }
-      },
-      {
-        $addFields: {
-          duplicates: {
-            $filter: {
-              input: "$duplicates",
-              as: "doc",
-              cond: { $ne: ["$$doc", null] }
-            }
           }
-        }
-      },
-    ])
-    let finalArray = []
-    docs[0].userData._id = docs[0]._id
-    docs[0].userData.recordTitle = 'Original'
-    docs[0].userData.similarityScore = 0
-    const originalData = docs[0].userData
-    for(const [key, value] of Object.entries(originalData)) {
-      originalData[key] = {
-        value: value,
-        isSame: true
-      }
-    }
-    finalArray.push(originalData)
-    for (let i = 0; i < docs[0].duplicates.length; i++) {
-      const duplicate = docs[0].duplicates[i];
-      duplicate.userData._id = duplicate._id
-      duplicate.userData.recordTitle = `Duplicate ${i+1}`
-      duplicate.userData.similarityScore = duplicate.similarityScore
-      const duplicateData = duplicate.userData
-      for(const [key, value] of Object.entries(duplicateData)) {
-        if(key == '_id' || key == 'recordTitle' || key == 'similarityScore') {
-          duplicateData[key] = {
-            value: value,
-            isSame: true
-          }
-        }
-        else{
-          duplicateData[key] = {
-            value: value,
-            isSame: value == originalData[key].value? true: false
-          }
+        },
+      ])
+      let finalArray = []
+      docs[0].userData._id = docs[0]._id
+      docs[0].userData.recordTitle = 'Original'
+      docs[0].userData.similarityScore = 0
+      const originalData = docs[0].userData
+      for(const [key, value] of Object.entries(originalData)) {
+        originalData[key] = {
+          value: value,
+          isSame: true
         }
       }
-      finalArray.push(duplicateData)
+      finalArray.push(originalData)
+      for (let i = 0; i < docs[0].duplicates.length; i++) {
+        const duplicate = docs[0].duplicates[i];
+        duplicate.userData._id = duplicate._id
+        duplicate.userData.recordTitle = `Duplicate ${i+1}`
+        duplicate.userData.similarityScore = duplicate.similarityScore
+        const duplicateData = duplicate.userData
+        for(const [key, value] of Object.entries(duplicateData)) {
+          if(key == '_id' || key == 'recordTitle' || key == 'similarityScore') {
+            duplicateData[key] = {
+              value: value,
+              isSame: true
+            }
+          }
+          else{
+            duplicateData[key] = {
+              value: value,
+              isSame: value == originalData[key].value? true: false
+            }
+          }
+        }
+        finalArray.push(duplicateData)
+      }
+      return finalArray
     }
-    return finalArray
+    return []
   }
 }
 
