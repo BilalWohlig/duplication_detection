@@ -200,7 +200,7 @@ class GoogleService {
   }
   
   async getOneRecordV2(recordId) {
-    const record = await DummyData.findOne({_id: recordId, status: {$exists: false}});
+    const record = await DummyData.findOne({_id: recordId});
     if(record){
       const docs = await DummyData.aggregate([
         {
@@ -260,7 +260,7 @@ class GoogleService {
   }
 
   async getOneRecordV3(recordId) {
-    const record = await DummyData.findOne({_id: recordId, status: {$exists: false}});
+    const record = await DummyData.findOne({_id: recordId});
     if(record) {
       const docs = await DummyData.aggregate([
         {
